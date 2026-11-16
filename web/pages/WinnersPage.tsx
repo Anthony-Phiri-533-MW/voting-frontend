@@ -111,7 +111,7 @@ const WinnersPage: React.FC<WinnersPageProps> = ({ electionStatus }) => {
       <div className="text-center mb-16">
         <h1 className="text-5xl md:text-6xl font-black text-dmi-blue-950">OFFICIAL WINNERS</h1>
         <p className="text-xl md:text-2xl text-dmi-blue-700 font-light mt-4">
-          2025–2026 Student Leadership Election Results
+          Student Leadership Election Results
         </p>
         <div className="flex justify-center gap-8 mt-6">
           <div className="h-px w-32 bg-dmi-gold-500"></div>

@@ -79,7 +79,7 @@ const HomePage: FC<HomePageProps> = ({ setPage, electionStatus, electionStartDat
       case 'POST_ELECTION':
         return (
           <div className="text-center p-4 bg-white/20 backdrop-blur-sm rounded-lg shadow-lg">
-              <h3 className="text-xl sm:text-2xl font-bold text-white">The 2025 Student Elections have concluded.</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">The Student Elections have concluded.</h3>
           </div>
         );
       default:
@@ -94,7 +94,7 @@ const HomePage: FC<HomePageProps> = ({ setPage, electionStatus, electionStartDat
         <h2 className="text-2xl md:text-4xl font-extrabold text-dmi-blue-900">
           {electionStatus === 'NO_ELECTION' ? 'Welcome to the DMI–SJBU Voting Portal' : "Shape Your University's Future"}
         </h2>
-        <h1 className="text-lg md:text-2xl font-bold text-dmi-blue-700 mt-2">Secure & Simple Electronic Voting for the 2025 Student Elections</h1>
+        <h1 className="text-lg md:text-2xl font-bold text-dmi-blue-700 mt-2">Secure & Simple Electronic Voting for the Student Elections</h1>
         <p className="mt-3 text-sm md:text-base text-gray-600 max-w-3xl mx-auto">
           Your Voice. Your Vote. Your DEMWAYE. Participate in building a better campus community.
         </p>
