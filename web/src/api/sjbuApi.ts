@@ -114,11 +114,17 @@ API.interceptors.response.use(
   (error) => {
     // Handle specific error codes globally (e.g., redirect to login on 401)
     if (error.response) {
-      console.error(`[API] Error response (${error.response.status}) from: ${error.config.url}`);
+      const url = String(error.config?.url || '');
+      // A 404 on /election/schedule is EXPECTED when no election has been
+      // scheduled yet — the app shows the landing page. Keep the console calm.
+      if (error.response.status === 404 && url.includes('/election/schedule')) {
+        console.info('[API] No election scheduled yet (404) — showing landing page state.');
+      } else {
+        console.error(`[API] Error response (${error.response.status}) from: ${error.config.url}`);
+      }
       // A 401 on an admin endpoint means the session token is missing,
       // stale or expired — drop it so the next login starts clean.
       if (error.response.status === 401) {
-        const url = String(error.config?.url || '');
         if (url.includes('/admin/') || url.includes('/audit/')) {
           localStorage.removeItem(ADMIN_TOKEN_KEY);
         }
