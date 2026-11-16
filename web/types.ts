@@ -85,7 +85,7 @@ export interface VotingStats {
     overallStats: OverallStats;
 }
 
-export type ElectionStatus = 'PRE_ELECTION' | 'LIVE' | 'POST_ELECTION';
+export type ElectionStatus = 'NO_ELECTION' | 'PRE_ELECTION' | 'LIVE' | 'POST_ELECTION';
 
 export interface AuditLogEntry {
   id: number;

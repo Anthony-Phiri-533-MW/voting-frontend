@@ -99,7 +99,7 @@ const App: React.FC = () => {
   } = useAllPositions();
 
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
-  const [electionStatus, setElectionStatus] = useState<ElectionStatus>('PRE_ELECTION');
+  const [electionStatus, setElectionStatus] = useState<ElectionStatus>('NO_ELECTION');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [electionStartDate, setElectionStartDate] = useState<Date>(ELECTION_START_DATE);
   const [electionEndDate, setElectionEndDate] = useState<Date>(ELECTION_END_DATE);
@@ -108,6 +108,8 @@ const App: React.FC = () => {
 
   const mapPhaseToElectionStatus = (phase: string | undefined): ElectionStatus => {
     switch (phase) {
+      case 'NONE':
+        return 'NO_ELECTION';
       case 'PRE':
       case 'PRE_ELECTION':
         return 'PRE_ELECTION';
@@ -220,11 +222,18 @@ const App: React.FC = () => {
           />
         );
       case 'PRE_ELECTION':
+      case 'NO_ELECTION':
         return (
           <div className="min-h-[60vh] flex items-center justify-center py-12 px-4">
             <Card className="max-w-2xl mx-auto p-12 text-center">
-              <h2 className="text-3xl font-bold text-dmi-blue-900">The Election Has Not Started</h2>
-              <p className="text-gray-600 mt-4">The voting period has not yet begun. Please check back on the official start date. Results will be available here once the election is live.</p>
+              <h2 className="text-3xl font-bold text-dmi-blue-900">
+                {electionStatus === 'NO_ELECTION' ? 'No Election Is Currently Scheduled' : 'The Election Has Not Started'}
+              </h2>
+              <p className="text-gray-600 mt-4">
+                {electionStatus === 'NO_ELECTION'
+                  ? 'Results will be available here once the electoral board schedules an election and it has concluded.'
+                  : 'The voting period has not yet begun. Please check back on the official start date. Results will be available here once the election is live.'}
+              </p>
             </Card>
           </div>
         );

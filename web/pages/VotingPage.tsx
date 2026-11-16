@@ -198,10 +198,15 @@ const handleSubmit = async () => {
   }
 
   if (phase !== 'LIVE') {
+    const message = phase === 'NONE'
+      ? 'No election is currently scheduled. Please check back once the electoral board announces one.'
+      : phase === 'PRE'
+        ? 'Voting has not opened yet — the election starts soon.'
+        : 'Voting is closed.';
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <Card className="max-w-4xl mx-auto p-6">
-          <h2 className="text-xl font-bold">Voting is {phase === 'PRE' ? 'not yet open' : 'closed'}</h2>
+          <h2 className="text-xl font-bold">{message}</h2>
         </Card>
       </div>
     );

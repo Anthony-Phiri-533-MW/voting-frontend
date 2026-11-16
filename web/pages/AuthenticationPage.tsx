@@ -118,6 +118,18 @@ const AuthenticationPage: React.FC<AuthenticationPageProps> = ({
 
   const renderPageContent = () => {
     switch (electionStatus) {
+      case 'NO_ELECTION':
+        return (
+          <Card className="max-w-md w-full p-8 text-center">
+            <span className="text-4xl" aria-hidden>🗓️</span>
+            <h2 className="text-2xl font-bold text-dmi-blue-900 mt-3">No Election Is Currently Scheduled</h2>
+            <p className="text-gray-600 mt-3 text-sm">
+              Voucher sign-in will be available once the electoral board announces an election.
+              Check the home page for updates.
+            </p>
+            <Button className="mt-4" variant="secondary" onClick={() => setPage(Page.Home)}>Back to Home</Button>
+          </Card>
+        );
       case 'PRE_ELECTION':
         return (
           <Card className="max-w-2xl mx-auto p-8 text-center bg-dmi-blue-800 text-white">

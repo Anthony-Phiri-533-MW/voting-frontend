@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchSchedule } from '../src/api/sjbuApi';
 
-export type Phase = 'PRE' | 'LIVE' | 'POST_WAIT' | 'POST' | 'UNKNOWN';
+export type Phase = 'PRE' | 'LIVE' | 'POST_WAIT' | 'POST' | 'NONE' | 'UNKNOWN';
 export type Schedule = {
   electionKey: string;
   startDate: string | null;
@@ -35,8 +35,14 @@ export default function useElectionSchedule(_pollMs = 15000) {
       const end = s.endDate ? new Date(s.endDate) : null;
       const results = s.resultsAnnouncement ? new Date(s.resultsAnnouncement) : null;
       setPhase(derivePhase(now, start, end, results));
-    } catch (err) {
-      console.error('Failed to fetch schedule', err);
+    } catch (err: any) {
+      // 404 = no election has been scheduled yet — a normal, expected state.
+      if (err?.response?.status === 404) {
+        setSchedule(null);
+        setPhase('NONE');
+      } else {
+        console.error('Failed to fetch schedule', err);
+      }
     } finally {
       setLoading(false);
     }
