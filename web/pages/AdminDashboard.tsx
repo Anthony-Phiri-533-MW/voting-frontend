@@ -33,6 +33,7 @@ const CandidatesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" 
 const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>;
 const AuditIcon = () => <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>;
 const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>;
+const VoucherIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/></svg>;
 const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 10v4h4"/><path d="m11 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M16 2v4"/><path d="m21 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M21 22v-4h-4"/><path d="M21 8.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4.3"/><path d="M3 10h4"/><path d="M8 2v4"/></svg>;
 
 // --- Types and component code unchanged except where schedule integration added ---
@@ -49,7 +50,7 @@ interface AdminDashboardProps {
     onRefetchPositions: () => void;
 }
 
-type AdminView = 'dashboard' | 'positions' | 'candidates' | 'users' | 'audit' | 'settings';
+type AdminView = 'dashboard' | 'positions' | 'candidates' | 'users' | 'audit' | 'vouchers' | 'settings';
 type ModalType = 'ADD_POSITION' | 'EDIT_POSITION' | 'DELETE_POSITION' | 'ADD_CANDIDATE' | 'EDIT_CANDIDATE' | 'DELETE_CANDIDATE' | 'ADD_USER' | 'EDIT_USER' | 'DELETE_USER';
 interface ModalState {
     isOpen: boolean;
@@ -84,6 +85,7 @@ const Sidebar: React.FC<{ activeView: AdminView; setActiveView: (view: AdminView
         { id: 'candidates', label: 'Candidates', icon: <CandidatesIcon />, permitted: permissions.canViewCandidates },
         { id: 'users', label: 'User Management', icon: <UsersIcon />, permitted: permissions.canViewUsers },
         { id: 'audit', label: 'Audit Log', icon: <AuditIcon />, permitted: permissions.canViewAuditLog },
+        { id: 'vouchers', label: 'Vouchers', icon: <VoucherIcon />, permitted: permissions.canViewAuditLog },
         { id: 'settings', label: 'Settings', icon: <SettingsIcon />, permitted: permissions.canEditSettings },
     ];
 
@@ -167,6 +169,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                  if (adminUsersError && adminUsers.length === 0) return <Card className="p-6 text-center text-red-600"><p>{adminUsersError}</p><Button onClick={fetchAdminUsers}>Retry</Button></Card>
                  return <UserManagementView adminUsers={adminUsers} permissions={permissions} onOpenModal={handleOpenModal} onRefresh={handleDataRefresh} />;
             case 'audit': return <AuditLogView permissions={permissions} currentUser={currentUser} />;
+            case 'vouchers': return <VouchersView permissions={permissions} currentUser={currentUser} />;
             case 'settings': return <SettingsView permissions={permissions} onStartCountdown={props.onStartCountdown} onScheduleSaved={props.onRefetchPositions} />;
             default: return <DashboardView permissions={permissions} />;
         }
@@ -1259,5 +1262,113 @@ const DeleteConfirmation: React.FC<{ entityType: string, entityName: string, onC
         </div>
     </>
 );
+
+// VouchersView - voucher status + counts for the demo
+interface VouchersViewProps {
+    permissions: Permissions;
+    currentUser: AdminUser;
+}
+const VouchersView: React.FC<VouchersViewProps> = ({ permissions, currentUser }) => {
+    const [data, setData] = useState<{ vouchers: { code: string; isUsed: boolean; votedPositions: number[]; createdAt: string }[]; counts: { total: number; used: number; unused: number } } | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [resetting, setResetting] = useState(false);
+    const [msg, setMsg] = useState<string | null>(null);
+
+    const fetchVouchers = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await sjbuApi.get('/admin/vouchers');
+            setData(res.data);
+        } catch (e: any) {
+            setError(e?.response?.data?.error || 'Failed to load vouchers');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchVouchers(); }, [fetchVouchers]);
+
+    const handleReset = async () => {
+        if (!window.confirm('Reset ALL votes and vouchers? This cannot be undone.')) return;
+        setResetting(true);
+        setMsg(null);
+        try {
+            const res = await sjbuApi.post('/admin/reset-votes');
+            setMsg(res.data?.message || 'Reset complete');
+            await fetchVouchers();
+        } catch (e: any) {
+            setMsg(e?.response?.data?.error || 'Reset failed');
+        } finally {
+            setResetting(false);
+        }
+    };
+
+    if (loading) return <Card className="p-6 text-center"><Spinner /><p className="mt-2 text-sm">Loading vouchers…</p></Card>;
+    if (error) return <Card className="p-6 text-center text-red-600"><p>{error}</p><Button onClick={fetchVouchers} className="mt-3">Retry</Button></Card>;
+    if (!data) return null;
+
+    const { vouchers, counts } = data;
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-500">Total Vouchers</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-dmi-blue-800 mt-2">{counts.total}</p>
+                </Card>
+                <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-500">Used</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-red-600 mt-2">{counts.used}</p>
+                    <p className="text-xs text-gray-500 mt-1">Already voted</p>
+                </Card>
+                <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-500">Available</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-2">{counts.unused}</p>
+                    <p className="text-xs text-gray-500 mt-1">Ready to hand out</p>
+                </Card>
+            </div>
+
+            <Card className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-dmi-blue-900">Voucher Status</h3>
+                    {permissions.canManageUsers && (
+                        <Button variant="danger" size="sm" onClick={handleReset} disabled={resetting}>
+                            {resetting ? <Spinner /> : 'Reset All Votes & Vouchers'}
+                        </Button>
+                    )}
+                </div>
+                {msg && <p className="text-sm text-gray-700 mb-3">{msg}</p>}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b text-left">
+                                <th className="py-2 pr-4 font-semibold text-gray-600">Voucher Code</th>
+                                <th className="py-2 pr-4 font-semibold text-gray-600">Status</th>
+                                <th className="py-2 pr-4 font-semibold text-gray-600">Positions Voted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {vouchers.map(v => (
+                                <tr key={v.code} className="border-b last:border-0">
+                                    <td className="py-2 pr-4 font-mono text-dmi-blue-900">{v.code}</td>
+                                    <td className="py-2 pr-4">
+                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${v.isUsed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                            {v.isUsed ? 'Used' : 'Available'}
+                                        </span>
+                                    </td>
+                                    <td className="py-2 pr-4 text-gray-600">
+                                        {v.votedPositions && v.votedPositions.length > 0 ? v.votedPositions.join(', ') : '—'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </div>
+    );
+};
 
 export default AdminDashboard;
