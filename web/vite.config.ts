@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      base: './', // relative asset paths so the build opens via file:// and from any base URL
       server: {
         port: 3000,
         host: '0.0.0.0',
