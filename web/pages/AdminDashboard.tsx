@@ -430,6 +430,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ permissions, onStartCountdo
     const [startParts, setStartParts] = useState<ScheduleParts>(EMPTY_PARTS);
     const [endParts, setEndParts] = useState<ScheduleParts>(EMPTY_PARTS);
     const [resultsParts, setResultsParts] = useState<ScheduleParts>(EMPTY_PARTS);
+    const [delayMinutes, setDelayMinutes] = useState('30');
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState<string | null>(null);
 
@@ -438,6 +439,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ permissions, onStartCountdo
             setStartParts(isoToCatParts(schedule.startDate));
             setEndParts(isoToCatParts(schedule.endDate));
             setResultsParts(isoToCatParts(schedule.resultsAnnouncement));
+            if (schedule.startDate && schedule.endDate && schedule.resultsAnnouncement) {
+                const delay = Math.round((new Date(schedule.resultsAnnouncement).getTime() - new Date(schedule.endDate).getTime()) / 60000);
+                if (delay > 0) setDelayMinutes(String(delay));
+            }
         }
     }, [schedule]);
 
@@ -446,7 +451,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ permissions, onStartCountdo
         if (!permissions.canEditSettings) return;
         const startIso = catPartsToIso(startParts.date, startParts.time);
         const endIso = catPartsToIso(endParts.date, endParts.time);
-        const resultsIso = catPartsToIso(resultsParts.date, resultsParts.time);
+        const explicitResults = catPartsToIso(resultsParts.date, resultsParts.time);
+        // If no explicit results time is set, derive it from the delay (minutes after end).
+        let resultsIso: string | null = explicitResults;
+        if (!resultsIso && endIso && delayMinutes.trim()) {
+            const delay = parseInt(delayMinutes, 10);
+            if (!isNaN(delay) && delay > 0) {
+                resultsIso = new Date(new Date(endIso).getTime() + delay * 60 * 1000).toISOString();
+            }
+        }
         if (!startIso || !endIso) {
             setMsg('Start date/time and end date/time are both required.');
             return;
@@ -520,6 +533,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ permissions, onStartCountdo
                 {renderDateTimeInputs('Election Starts', startParts, setStartParts, true)}
                 {renderDateTimeInputs('Election Ends', endParts, setEndParts, true)}
                 {renderDateTimeInputs('Results Announcement (optional — defaults to 30 min after end)', resultsParts, setResultsParts, false)}
+
+                <div className="p-3 rounded-lg border border-gray-200 bg-white">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Results Release Delay (minutes after end)</label>
+                    <p className="text-xs text-gray-500 mb-2">Used when no explicit results time is set above. Default 30. Use 2 for a quick demo.</p>
+                    <input
+                        type="number"
+                        min={1}
+                        value={delayMinutes}
+                        onChange={e => setDelayMinutes(e.target.value)}
+                        disabled={!permissions.canEditSettings}
+                        className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-dmi-blue-500 focus:ring-dmi-blue-500 disabled:bg-gray-100 text-sm"
+                    />
+                </div>
 
                  <div className="pt-2 flex justify-end">
                     <Button type="submit" disabled={!permissions.canEditSettings || saving} className="min-h-touch">{saving ? 'Saving...' : 'Save Schedule'}</Button>
